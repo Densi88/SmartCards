@@ -1,6 +1,7 @@
 package com.example.smart_cards
 
 import android.os.Bundle
+import android.widget.Button
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -14,34 +15,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.example.smart_cards.ui.theme.Smart_cardsTheme
 
 class MainActivity : ComponentActivity() {
+    private lateinit var enterButton: Button
+    private lateinit var exitButton: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContent {
-            Smart_cardsTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
-                }
-            }
+        setContentView(R.layout.main_activity)
+        findObjects()
+        setListeners()
+    }
+    private fun setListeners(){
+        enterButton.setOnClickListener {
+            setContentView(R.layout.settings_layout)
+        }
+        exitButton.setOnClickListener {
+            finishAffinity()
         }
     }
-}
-
-@Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Hello $name!",
-        modifier = modifier
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun GreetingPreview() {
-    Smart_cardsTheme {
-        Greeting("Android")
+    private fun findObjects(){
+        enterButton=findViewById<Button>(R.id.enterButton)
+        exitButton=findViewById<Button>(R.id.exitButton)
     }
+
 }
