@@ -25,6 +25,16 @@
         android:textColor="#F5FBFF"
         />
     <Button
+        android:id="@+id/settingsButton"
+        android:layout_width="match_parent"
+        android:layout_height="300px"
+        android:text="Настройки"
+        android:textSize="25dp"
+        android:textAlignment="center"
+        android:backgroundTint="@color/buttons"
+        android:textColor="#F5FBFF"
+        />
+    <Button
         android:id="@+id/exitButton"
         android:layout_width="match_parent"
         android:layout_height="300px"

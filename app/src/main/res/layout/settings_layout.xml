@@ -2,6 +2,58 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Сложность"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:layout_marginBottom="50dp" />
+
+    <RadioGroup
+        android:id="@+id/radioGroupDifficulty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <RadioButton
+            android:id="@+id/radioEasy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Легко" />
+
+        <RadioButton
+            android:id="@+id/radioMedium"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Средне" />
+
+        <RadioButton
+            android:id="@+id/radioHard"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Сложно" />
+    </RadioGroup>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Подсказки"
+        android:textSize="25sp"
+        android:textStyle="bold"
+        android:textColor="#000000"
+        android:layout_marginBottom="50dp" />
+    <CheckBox
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        >
+
+    </CheckBox>
+
 
 </LinearLayout>
+<!-- TODO: Добавить ListView с настройкой темы, подумать над БД(Room, SQLite) -->

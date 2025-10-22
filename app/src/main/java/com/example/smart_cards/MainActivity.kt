@@ -17,6 +17,7 @@ import com.example.smart_cards.ui.theme.Smart_cardsTheme
 class MainActivity : ComponentActivity() {
     private lateinit var enterButton: Button
     private lateinit var exitButton: Button
+    private lateinit var settingsButton: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
@@ -25,15 +26,19 @@ class MainActivity : ComponentActivity() {
     }
     private fun setListeners(){
         enterButton.setOnClickListener {
-            setContentView(R.layout.settings_layout)
+
         }
         exitButton.setOnClickListener {
             finishAffinity()
+        }
+        settingsButton.setOnClickListener {
+            setContentView(R.layout.settings_layout)
         }
     }
     private fun findObjects(){
         enterButton=findViewById<Button>(R.id.enterButton)
         exitButton=findViewById<Button>(R.id.exitButton)
+        settingsButton=findViewById<Button>(R.id.settingsButton)
     }
 
 }
