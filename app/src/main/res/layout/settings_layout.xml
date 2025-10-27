@@ -9,50 +9,59 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Сложность"
+        android:text="Уведомления"
         android:textSize="25sp"
         android:textStyle="bold"
         android:textColor="#000000"
-        android:layout_marginBottom="50dp" />
+        android:layout_marginBottom="10dp" />
 
     <RadioGroup
-        android:id="@+id/radioGroupDifficulty"
+        android:id="@+id/radioGroupNotifications"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
         <RadioButton
-            android:id="@+id/radioEasy"
+            android:id="@+id/radioNoNotifications"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Легко" />
+            android:text="Отключить" />
 
         <RadioButton
-            android:id="@+id/radioMedium"
+            android:id="@+id/radioIntervalNotifications"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Средне" />
+            android:text="Каждые 12 часов" />
 
         <RadioButton
-            android:id="@+id/radioHard"
+            android:id="@+id/radioCurrentTime"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Сложно" />
+            android:text="Каждый день в  19:00" />
     </RadioGroup>
+    <Button
+        android:id="@+id/enterButton"
+        android:layout_width="match_parent"
+        android:layout_height="150px"
+        android:text="Гибкая настройка"
+        android:textSize="25dp"
+        android:textAlignment="center"
+        android:backgroundTint="@color/buttons"
+        android:textColor="#F5FBFF"
+        />
     <TextView
-        android:layout_width="wrap_content"
+        android:id="@+id/textView2"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Подсказки"
+        android:text="Языки"
         android:textSize="25sp"
         android:textStyle="bold"
         android:textColor="#000000"
-        android:layout_marginBottom="50dp" />
-    <CheckBox
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        >
+        />
 
-    </CheckBox>
+    <ListView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 
 </LinearLayout>

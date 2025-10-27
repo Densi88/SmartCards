@@ -1,18 +1,10 @@
 package com.example.smart_cards
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.smart_cards.ui.theme.Smart_cardsTheme
+
 
 class MainActivity : ComponentActivity() {
     private lateinit var enterButton: Button
@@ -26,13 +18,16 @@ class MainActivity : ComponentActivity() {
     }
     private fun setListeners(){
         enterButton.setOnClickListener {
+            val intent= Intent(this, MainMenuActivity::class.java)
+            startActivity(intent)
 
         }
         exitButton.setOnClickListener {
             finishAffinity()
         }
         settingsButton.setOnClickListener {
-            setContentView(R.layout.settings_layout)
+            val intent = Intent(this, SettingsActivity::class.java)
+            startActivity(intent)
         }
     }
     private fun findObjects(){
