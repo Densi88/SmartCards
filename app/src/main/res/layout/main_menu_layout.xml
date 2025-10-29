@@ -7,6 +7,7 @@
     <!-- Добавить фрагмент, доделать навигацию, чтобы было красиво(Иконки, цвет и прочее). -->
 
     <FrameLayout
+        android:id="@+id/main_menu_fragment"
         android:layout_width="match_parent"
         android:layout_height="100dp"
         android:layout_weight="1"
