@@ -6,6 +6,7 @@ import android.view.MenuItem
 import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import com.example.smart_cards.models.UserModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainMenuActivity: AppCompatActivity() {

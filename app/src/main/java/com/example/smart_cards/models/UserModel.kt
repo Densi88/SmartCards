@@ -1,4 +1,4 @@
-package com.example.smart_cards
+package com.example.smart_cards.models
 
 import androidx.lifecycle.ViewModel
 

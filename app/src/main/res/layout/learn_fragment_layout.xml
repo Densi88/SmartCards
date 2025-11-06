@@ -6,14 +6,10 @@
 
     >
 
-
-    <TextView
-        android:id="@+id/textView3"
+    <androidx.recyclerview.widget.RecyclerView
+        android:layout_gravity="center"
+        android:id="@+id/levels"
+        android:layout_weight="1"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="ТУТ ЧЕСТНО БУДУТ УРОВНИ А НЕ ПРОСТО ЗАТЫЧКА Я ПРОСТО НЕ ПРИДУМАЛ"
-        android:textColor="@color/black"
-        android:textSize="30dp"
-        android:paddingTop="?attr/actionBarSize"
-        />
+        android:layout_height="match_parent" />
 </LinearLayout>
