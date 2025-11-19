@@ -10,6 +10,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var enterButton: Button
     private lateinit var exitButton: Button
     private lateinit var settingsButton: Button
+
+    private lateinit var cardsButton: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.main_activity)
@@ -29,11 +31,16 @@ class MainActivity : ComponentActivity() {
             val intent = Intent(this, SettingsActivity::class.java)
             startActivity(intent)
         }
+        cardsButton.setOnClickListener {
+            val intent = Intent(this, CardsActivity::class.java)
+            startActivity(intent)
+        }
     }
     private fun findObjects(){
         enterButton=findViewById<Button>(R.id.enterButton)
         exitButton=findViewById<Button>(R.id.exitButton)
         settingsButton=findViewById<Button>(R.id.settingsButton)
+        cardsButton=findViewById<Button>(R.id.cardsButton)
     }
 
 }
