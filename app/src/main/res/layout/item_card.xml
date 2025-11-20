@@ -37,15 +37,6 @@
             android:text="Перевод"
             android:textSize="14sp" />
 
-        <Button
-            android:id="@+id/btnDelete"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="end"
-            android:layout_marginTop="8dp"
-            android:text="Удалить"
-            android:textColor="@android:color/white"
-            android:backgroundTint="@android:color/holo_red_dark" />
 
     </LinearLayout>
 

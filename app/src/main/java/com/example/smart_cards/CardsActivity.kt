@@ -42,7 +42,7 @@ class CardsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.cards_activity_layout) // Убедись что layout называется activity_cards.xml
+        setContentView(R.layout.cards_activity_layout)
 
         initViews()
         setupRecyclerView()
@@ -75,8 +75,8 @@ class CardsActivity : AppCompatActivity() {
             showAddDialog()
         }
         exportButton.setOnClickListener {
-            exportPDF();
             exportStatisticsCSV()
+            exportPDF();
             exportStatisticsXLS()
         }
     }
@@ -204,7 +204,7 @@ class CardsActivity : AppCompatActivity() {
         document.finishPage(page)
 
         val file = File(
-            getExternalFilesDir(null),
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
             "my_vocabulary.pdf"
         )
 
@@ -261,6 +261,10 @@ class CardsActivity : AppCompatActivity() {
             val percentage = (progress.correctCount.toDouble() / (progress.correctCount + progress.wrongCount)) * 100
             csv.append("${progress.word};${progress.translation};${progress.correctCount};${progress.wrongCount};${"%.1f".format(percentage)}%;${progress.lastPracticed}\n")
         }
+
+        file.writeText(csv.toString())
+
+        Toast.makeText(this, "CSV сохранен!", Toast.LENGTH_LONG).show()
         return file
     }
     private fun exportStatisticsXLS():File{
