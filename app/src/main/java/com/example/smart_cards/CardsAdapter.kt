@@ -16,7 +16,6 @@ class CardsAdapter(
     class CardViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val word: TextView = itemView.findViewById(R.id.tvWord)
         val translate: TextView = itemView.findViewById(R.id.tvTranslate)
-        val number: TextView = itemView.findViewById(R.id.tvNumber)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CardViewHolder {
@@ -30,7 +29,7 @@ class CardsAdapter(
 
         holder.word.text = card.word
         holder.translate.text = card.translate
-        holder.number.text=card.number.toString()
+
 
         holder.itemView.setOnClickListener {
             onItemClick(card)

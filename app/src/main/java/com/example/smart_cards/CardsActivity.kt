@@ -2,20 +2,13 @@ package com.example.smart_cards
 
 import LearningStats
 import WordProgress
-import android.content.Intent
-import android.graphics.fonts.Font
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment.DIRECTORY_DOCUMENTS
-import android.os.Environment.getExternalStoragePublicDirectory
 import android.view.LayoutInflater
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.ui.text.font.FontFamily
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -23,19 +16,21 @@ import com.example.smart_cards.models.Card
 import com.google.android.material.snackbar.Snackbar
 import android.graphics.pdf.PdfDocument
 import android.graphics.Paint
-import android.net.Uri
 import android.os.Environment
-import androidx.core.content.ContentProviderCompat.requireContext
+import android.util.Log
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Date
+
+
 
 class CardsActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var addButton: Button
     private lateinit var exportButton: Button
+    private lateinit var importButton: Button
     private lateinit var adapter: CardsAdapter
     private val cardList = mutableListOf<Card>()
     private var nextId = 1
@@ -54,6 +49,7 @@ class CardsActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerView)
         addButton = findViewById(R.id.Button)
         exportButton=findViewById<Button>(R.id.export_button)
+        importButton=findViewById<Button>(R.id.import_button)
     }
 
     private fun setupRecyclerView() {
@@ -78,6 +74,10 @@ class CardsActivity : AppCompatActivity() {
             exportStatisticsCSV()
             exportPDF();
             exportStatisticsXLS()
+        }
+        importButton.setOnClickListener {
+            val text: String=readTextFile()
+            importPdfVocabulary(text)
         }
     }
 
@@ -128,7 +128,7 @@ class CardsActivity : AppCompatActivity() {
                 val description = descEditText.text.toString()
 
                 if (title.isNotEmpty() && description.isNotEmpty()) {
-                    val newCard = Card(nextId++, title, description)
+                    val newCard = Card(title, description)
                     adapter.addCard(newCard)
                     dialog.dismiss()
                 } else {
@@ -178,6 +178,27 @@ class CardsActivity : AppCompatActivity() {
             .show()
     }
 
+    private fun createTextFileForImport(pdfFile: File) {
+        try {
+            val textFile = File(pdfFile.parent, "my_vocabulary.txt")
+            val content = StringBuilder()
+
+            content.appendLine("Мой словарь иностранных слов")
+            content.appendLine()
+
+            cardList.forEach { card ->
+                content.appendLine("${card.word} - ${card.translate}")
+            }
+
+            textFile.writeText(content.toString(), Charsets.UTF_8)
+            Log.d("EXPORT", "✅ Текстовый файл создан: ${textFile.absolutePath}")
+            Log.d("EXPORT", "Содержимое: $content")
+
+        } catch (e: Exception) {
+            Log.e("EXPORT", "❌ Ошибка создания текстового файла", e)
+        }
+    }
+
 
     private fun exportPDF(): File {
         val document = PdfDocument()
@@ -212,6 +233,7 @@ class CardsActivity : AppCompatActivity() {
             document.writeTo(fos)
         }
         document.close()
+        createTextFileForImport(file)
 
 
         Toast.makeText(this, "PDF создан: ${file.absolutePath}", Toast.LENGTH_LONG).show()
@@ -305,5 +327,59 @@ class CardsActivity : AppCompatActivity() {
         Toast.makeText(this, "XLS сохранен!", Toast.LENGTH_LONG).show()
         return file
 
+    }
+
+    private fun importPdfVocabulary(text: String) {
+        val lines = text.lines()
+        var startParsing = false
+        Log.d("DEBUG_IMPORT", "=== НАЧАЛО ИМПОРТА ===")
+        Log.d("DEBUG_IMPORT", "Размер cardList ДО очистки: ${cardList.size}")
+        cardList.clear()
+        adapter.notifyDataSetChanged()
+
+        Log.d("DEBUG_IMPORT", "Размер cardList ПОСЛЕ очистки: ${cardList.size}")
+
+
+
+        for (line in lines) {
+            when {
+                line.contains("Мой словарь иностранных слов") -> {
+                    startParsing = true
+                    continue
+                }
+                startParsing && line.contains(" - ") -> {
+                    val parts = line.split(" - ", limit = 2)
+                    if (parts.size == 2) {
+                        val word = parts[0].trim()
+                        val translate = parts[1].trim()
+                        Log.d("DEBUG_IMPORT", "Найдена пара: '$word' - '$translate'")
+                        val card: Card= Card(word, translate)
+                        Log.d("DEBUG_IMPORT", "Добавляем карточку в список")
+                        cardList.add(card)
+                    }
+                }
+                // Можно добавить другие условия если нужно
+            }
+        }
+        adapter.notifyDataSetChanged()
+
+    }
+    private fun readTextFile(): String {
+        return try {
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val textFile = File(downloadsDir, "my_vocabulary.txt")
+
+            if (textFile.exists()) {
+                val text = textFile.readText(Charsets.UTF_8)
+                Log.d("READ_FILE", "Файл прочитан: ${text.length} символов")
+                text
+            } else {
+                Log.d("READ_FILE", "Файл не найден")
+                ""
+            }
+        } catch (e: Exception) {
+            Log.e("READ_FILE", "Ошибка чтения файла", e)
+            ""
+        }
     }
 }

@@ -14,14 +14,6 @@
         android:padding="16dp">
 
         <TextView
-            android:id="@+id/tvNumber"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Номер"
-            android:textSize="18sp"
-            android:textStyle="bold" />
-
-        <TextView
             android:id="@+id/tvWord"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
