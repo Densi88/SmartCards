@@ -2,6 +2,8 @@ package com.example.smart_cards
 
 import LearningStats
 import WordProgress
+import android.content.ContentValues
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.Button
@@ -18,9 +20,12 @@ import android.graphics.pdf.PdfDocument
 import android.graphics.Paint
 import android.os.Environment
 import android.util.Log
+import com.example.smart_cards.db.dbAdapter
+import com.example.smart_cards.db.dbOpenHelper
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileOutputStream
+import java.sql.SQLException
 import java.util.Date
 
 
@@ -32,8 +37,8 @@ class CardsActivity : AppCompatActivity() {
     private lateinit var exportButton: Button
     private lateinit var importButton: Button
     private lateinit var adapter: CardsAdapter
+    private lateinit var dbHelper: dbOpenHelper
     private val cardList = mutableListOf<Card>()
-    private var nextId = 1
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +48,98 @@ class CardsActivity : AppCompatActivity() {
         setupRecyclerView()
         setupButton()
         setupSwipeToDelete()
+        dbHelper= dbAdapter.getDbHelper()
+        val db=dbHelper.readableDatabase
+        readCards(db)
+    }
+    private fun addCard(currentWord: String, currentTranslation:String, db: SQLiteDatabase){
+        val addTranslation="insert into translation (translation_text) values (?)"
+        db.execSQL(addTranslation, arrayOf(currentTranslation))
+
+        val cursor = db.rawQuery("SELECT last_insert_rowid()", null)
+        val translationId = if (cursor.moveToFirst()) {
+            cursor.getLong(0)
+        } else {
+            -1L
+        }
+        cursor.close()
+
+        if (translationId == -1L) {
+            throw SQLException("Не удалось получить ID перевода") as Throwable
+        }
+
+
+        val addCard = """
+            INSERT INTO cards (word, translation_id, language_id) 
+            VALUES(?, ?, ?)
+        """.trimIndent()
+        db.execSQL(addCard, arrayOf(currentWord, translationId.toString(), "1"))
+    }
+
+    private fun deleteCard(db: SQLiteDatabase, currentWord: String){
+
+        val rowsDeleted = db.delete("cards", "word = ?", arrayOf(currentWord))
+
+        if (rowsDeleted > 0) {
+            Toast.makeText(this, "Удалено карточек: $rowsDeleted", Toast.LENGTH_SHORT).show()
+            Log.d("DB", "Удалена карточка: $currentWord (каскадно)")
+        } else {
+            Toast.makeText(this, "Карточка '$currentWord' не найдена", Toast.LENGTH_SHORT).show()
+        }
+
+    }
+
+    private fun updateCard(db: SQLiteDatabase, newWord:String, newTranslation: String, oldWord:String){
+        val cursor = db.rawQuery(
+            "SELECT c.id, c.translation_id FROM cards c WHERE c.word = ?",
+            arrayOf(oldWord)
+        )
+        if (!cursor.moveToFirst()) {
+            cursor.close()
+            Toast.makeText(this, "Карточка '$oldWord' не найдена", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val cardId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
+        val translationId = cursor.getLong(cursor.getColumnIndexOrThrow("translation_id"))
+        cursor.close()
+
+        val translationValues = ContentValues().apply {
+            put("translation_text", newTranslation)
+        }
+
+        db.update(
+            "translation",
+            translationValues,
+            "id = ?",
+            arrayOf(translationId.toString())
+        )
+
+        // 3. Обновляем слово в карточке
+        val cardValues = ContentValues().apply {
+            put("word", newWord)
+        }
+
+        val rowsUpdated = db.update(
+            "cards",
+            cardValues,
+            "id = ?",
+            arrayOf(cardId.toString())
+        )
+    }
+
+    private fun readCards(db: SQLiteDatabase){
+        val query = "SELECT cards.word, translation.translation_text " +
+                "FROM cards JOIN translation ON translation.id = cards.translation_id"
+        val cursor=db.rawQuery(query, null)
+        while (cursor.moveToNext()) {
+            val card = Card(
+                word = cursor.getString(cursor.getColumnIndexOrThrow("word")),
+                translate = cursor.getString(cursor.getColumnIndexOrThrow("translation_text")),
+            )
+            cardList.add(card)
+        }
+        cursor.close()
+
     }
 
     private fun initViews() {
@@ -82,6 +179,8 @@ class CardsActivity : AppCompatActivity() {
     }
 
     private fun setupSwipeToDelete() {
+        dbHelper= dbAdapter.getDbHelper()
+        val db=dbHelper.writableDatabase
         val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
             0,
             ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
@@ -98,8 +197,9 @@ class CardsActivity : AppCompatActivity() {
                 val position = viewHolder.adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val deletedCard = cardList[position]
+                    val currentWord=deletedCard.word
                     adapter.deleteCard(position)
-
+                    deleteCard(db, currentWord)
                     showUndoSnackbar(deletedCard, position)
                 }
             }
@@ -113,6 +213,8 @@ class CardsActivity : AppCompatActivity() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_card, null)
         val titleEditText = dialogView.findViewById<EditText>(R.id.etTitle)
         val descEditText = dialogView.findViewById<EditText>(R.id.etDescription)
+        dbHelper= dbAdapter.getDbHelper()
+        val db=dbHelper.writableDatabase
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Добавить карточку")
@@ -128,6 +230,7 @@ class CardsActivity : AppCompatActivity() {
                 val description = descEditText.text.toString()
 
                 if (title.isNotEmpty() && description.isNotEmpty()) {
+                    addCard(title, description, db)
                     val newCard = Card(title, description)
                     adapter.addCard(newCard)
                     dialog.dismiss()
@@ -144,8 +247,11 @@ class CardsActivity : AppCompatActivity() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_card, null)
         val titleEditText = dialogView.findViewById<EditText>(R.id.etTitle)
         val descEditText = dialogView.findViewById<EditText>(R.id.etDescription)
+        dbHelper= dbAdapter.getDbHelper()
+        val db=dbHelper.writableDatabase
 
         titleEditText.setText(card.word)
+        val oldWord=card.word
         descEditText.setText(card.translate)
 
         val dialog = AlertDialog.Builder(this)
@@ -158,6 +264,7 @@ class CardsActivity : AppCompatActivity() {
                 if (newWord.isNotEmpty() && newTranslate.isNotEmpty()) {
                     val updatedCard = card.copy(word = newWord, translate = newTranslate)
                     adapter.updateCard(position, updatedCard)
+                    updateCard(db, newWord, newTranslate, oldWord)
                 } else {
                     Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
                 }
@@ -191,11 +298,11 @@ class CardsActivity : AppCompatActivity() {
             }
 
             textFile.writeText(content.toString(), Charsets.UTF_8)
-            Log.d("EXPORT", "✅ Текстовый файл создан: ${textFile.absolutePath}")
+            Log.d("EXPORT", "Текстовый файл создан: ${textFile.absolutePath}")
             Log.d("EXPORT", "Содержимое: $content")
 
         } catch (e: Exception) {
-            Log.e("EXPORT", "❌ Ошибка создания текстового файла", e)
+            Log.e("EXPORT", "Ошибка создания текстового файла", e)
         }
     }
 
@@ -265,7 +372,6 @@ class CardsActivity : AppCompatActivity() {
         }
     }
     private fun exportStatisticsCSV(): File {
-        // Генерируем реалистичные данные
         val wordProgress = generateRealisticData()
 
         val file = File(
@@ -275,7 +381,6 @@ class CardsActivity : AppCompatActivity() {
 
         val csv = StringBuilder()
 
-        // Заголовки для прогресса слов
         csv.append("=== ПРОГРЕСС ПО СЛОВАМ ===\n")
         csv.append("Слово;Перевод;Правильно;Неправильно;Процент;Последняя практика\n")
 
@@ -358,7 +463,6 @@ class CardsActivity : AppCompatActivity() {
                         cardList.add(card)
                     }
                 }
-                // Можно добавить другие условия если нужно
             }
         }
         adapter.notifyDataSetChanged()

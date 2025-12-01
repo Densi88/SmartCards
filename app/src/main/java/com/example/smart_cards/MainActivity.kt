@@ -1,9 +1,13 @@
 package com.example.smart_cards
 
 import android.content.Intent
+import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import androidx.activity.ComponentActivity
+import com.example.smart_cards.db.dbAdapter
+import com.example.smart_cards.db.dbOpenHelper
 
 
 class MainActivity : ComponentActivity() {
@@ -17,6 +21,7 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.main_activity)
         findObjects()
         setListeners()
+        dbAdapter.init(applicationContext)
     }
     private fun setListeners(){
         enterButton.setOnClickListener {
