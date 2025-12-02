@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import androidx.compose.ui.layout.Layout
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smart_cards.databinding.LevelItemBinding
+import com.example.smart_cards.db.dbAdapter
 import com.example.smart_cards.models.Level
 
 class LevelAdapter: RecyclerView.Adapter<LevelAdapter.LevelsHolder>() {
@@ -33,14 +34,18 @@ class LevelAdapter: RecyclerView.Adapter<LevelAdapter.LevelsHolder>() {
         val binding= LevelItemBinding.bind(item)
         fun bind(level:Level)=with(binding){
             levelButton.text=level.number.toString()
-            levelTopic.text=level.title
         }
 
     }
 
     fun generateLevels(){
-        for (i in 0 until 5){
-            val level= Level(i, "Заглушка")
+        val dbHelper=dbAdapter.getDbHelper()
+        val db=dbHelper.readableDatabase
+        val query="select number from levels"
+        val cursor=db.rawQuery(query, null)
+        while(cursor.moveToNext()){
+            val number=cursor.getString(cursor.getColumnIndexOrThrow("number"))
+            val level= Level(number)
             levelList.add(level)
         }
         notifyDataSetChanged()

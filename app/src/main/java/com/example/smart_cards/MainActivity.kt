@@ -21,7 +21,6 @@ class MainActivity : ComponentActivity() {
         setContentView(R.layout.main_activity)
         findObjects()
         setListeners()
-        dbAdapter.init(applicationContext)
     }
     private fun setListeners(){
         enterButton.setOnClickListener {

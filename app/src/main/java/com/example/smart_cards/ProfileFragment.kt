@@ -15,9 +15,9 @@ class ProfileFragment: Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         view.findViewById<TextView>(R.id.username).text = userViewModel.userName
-        view.findViewById<TextView>(R.id.levelText).text = "Уровень ${userViewModel.userLevel}"
-        view.findViewById<TextView>(R.id.streakText).text = userViewModel.streakDays.toString()
-        view.findViewById<TextView>(R.id.experienceText).text = userViewModel.experience.toString()
+        //view.findViewById<TextView>(R.id.levelText).text = "Уровень ${userViewModel.userLevel}"
+        //view.findViewById<TextView>(R.id.streakText).text = userViewModel.streakDays.toString()
+        //view.findViewById<TextView>(R.id.experienceText).text = userViewModel.experience.toString()
     }
     override fun onCreateView(
         inflater: LayoutInflater,
