@@ -11,10 +11,15 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.smart_cards.databinding.LearnFragmentLayoutBinding
+import com.example.smart_cards.models.Card
+import com.example.smart_cards.models.Level
+import com.example.smart_cards.threads.ThreadHandler
 
 class LearnFragment: Fragment() {
     private val adapter= LevelAdapter()
+
     lateinit var binding: LearnFragmentLayoutBinding
+    private lateinit var threadHandler: ThreadHandler
     private lateinit var recyclerView: RecyclerView
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -26,7 +31,17 @@ class LearnFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        threadHandler = ThreadHandler { levels ->
+            requireActivity().runOnUiThread {
+                val levelObjects = levels.mapIndexed { index, cards ->
+                    Level(number = (index + 1).toString())
+                }
+                adapter.updateLevels(levelObjects)
+                println("UI обновлён: ${levelObjects.size} уровней")
+            }
+        }
         recyclerView=view.findViewById<RecyclerView>(R.id.levels)
+        threadHandler.start()
         init()
     }
 
@@ -35,10 +50,22 @@ class LearnFragment: Fragment() {
             LearnFragment()
         }
     }
+    fun updateLevels(levels: List<List<Card>>) {
+        requireActivity().runOnUiThread {
+            val levelObjects = levels.mapIndexed { index, cards ->
+                Level(number = (index + 1).toString())
+            }
+            adapter.updateLevels(levelObjects)
+        }
+    }
     private fun init()  {
         recyclerView.layoutManager= LinearLayoutManager(requireContext())
         recyclerView.adapter=adapter
-        adapter.generateLevels()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        threadHandler.stop()
     }
 
 

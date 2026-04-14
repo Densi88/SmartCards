@@ -8,6 +8,7 @@ import android.widget.Button
 import androidx.activity.ComponentActivity
 import com.example.smart_cards.db.dbAdapter
 import com.example.smart_cards.db.dbOpenHelper
+import com.example.smart_cards.threads.ThreadHandler
 
 
 class MainActivity : ComponentActivity() {

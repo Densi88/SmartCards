@@ -27,6 +27,9 @@ import java.io.File
 import java.io.FileOutputStream
 import java.sql.SQLException
 import java.util.Date
+import kotlinx.coroutines.*
+import androidx.lifecycle.lifecycleScope
+
 
 
 
@@ -36,6 +39,11 @@ class CardsActivity : AppCompatActivity() {
     private lateinit var addButton: Button
     private lateinit var exportButton: Button
     private lateinit var importButton: Button
+
+    private var exportJob: Job? = null
+    private var readStatistics: List<String>? = null
+
+    private lateinit var statsButton: Button
     private lateinit var adapter: CardsAdapter
     private lateinit var dbHelper: dbOpenHelper
     private val cardList = mutableListOf<Card>()
@@ -51,6 +59,73 @@ class CardsActivity : AppCompatActivity() {
         dbHelper= dbAdapter.getDbHelper()
         val db=dbHelper.readableDatabase
         readCards(db)
+        downloadCoro()
+        readCoro()
+    }
+
+    private fun downloadCoro() {
+        exportJob = GlobalScope.launch(Dispatchers.Main) {
+            while (isActive) {
+                Toast.makeText(this@CardsActivity, "Экспорт начат...", Toast.LENGTH_SHORT).show()
+
+                val file = withContext(Dispatchers.IO) {
+                    exportStatisticsCSV()
+                }
+
+                Toast.makeText(this@CardsActivity, "Экспорт завершён: ${file.name}", Toast.LENGTH_LONG).show()
+                println("ЭКСПОРТ ВЫПОЛНЕН: ${System.currentTimeMillis()}")
+
+                delay(30000)
+            }
+        }
+    }
+
+    private fun readCoro() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            while (isActive) {
+                // НЕ ждём экспорт, просто читаем текущий файл
+                val lines = withContext(Dispatchers.IO) {
+                    val file = File(filesDir, "vocabulary_statistics.csv")
+                    if (!file.exists()) return@withContext null
+                    file.readLines()
+                }
+
+                readStatistics = lines
+
+                if (lines == null) {
+                    Toast.makeText(this@CardsActivity, "Файл не найден. Сначала экспортируйте статистику.", Toast.LENGTH_LONG).show()
+                } else if (lines.isEmpty()) {
+                    Toast.makeText(this@CardsActivity, "Файл пуст", Toast.LENGTH_LONG).show()
+                } else {
+                    println("ЧТЕНИЕ ВЫПОЛНЕНО: ${lines.size} строк")
+                }
+
+                delay(30000)  // читаем каждые 30 секунд
+            }
+        }
+    }
+
+    private fun showStatisticsDialog(lines: List<String>) {
+        val message = buildString {
+            appendLine("СТАТИСТИКА")
+            appendLine("Всего строк: ${lines.size}")
+            appendLine("")
+
+            // Показываем первые 15 строк
+            lines.take(15).forEachIndexed { index, line ->
+                appendLine("${index + 1}. $line")
+            }
+
+            if (lines.size > 15) {
+                appendLine("... и ещё ${lines.size - 15} строк")
+            }
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle("CSV файл")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
     }
     private fun addCard(currentWord: String, currentTranslation:String, db: SQLiteDatabase){
         val addTranslation="insert into translation (translation_text) values (?)"
@@ -147,6 +222,7 @@ class CardsActivity : AppCompatActivity() {
         addButton = findViewById(R.id.Button)
         exportButton=findViewById<Button>(R.id.export_button)
         importButton=findViewById<Button>(R.id.import_button)
+        statsButton=findViewById<Button>(R.id.show_statistics_button)
     }
 
     private fun setupRecyclerView() {
@@ -176,7 +252,17 @@ class CardsActivity : AppCompatActivity() {
             val text: String=readTextFile()
             importPdfVocabulary(text)
         }
+        statsButton.setOnClickListener {
+            if (readStatistics == null) {
+                Toast.makeText(this, "Данные ещё не загружены. Подождите...", Toast.LENGTH_SHORT).show()
+            } else if (readStatistics!!.isEmpty()) {
+                Toast.makeText(this, "Нет данных для отображения", Toast.LENGTH_SHORT).show()
+            } else {
+                showStatisticsDialog(readStatistics!!)
+            }
+        }
     }
+
 
     private fun setupSwipeToDelete() {
         dbHelper= dbAdapter.getDbHelper()
@@ -332,7 +418,7 @@ class CardsActivity : AppCompatActivity() {
         document.finishPage(page)
 
         val file = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            filesDir,
             "my_vocabulary.pdf"
         )
 
@@ -375,7 +461,7 @@ class CardsActivity : AppCompatActivity() {
         val wordProgress = generateRealisticData()
 
         val file = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            filesDir,
             "vocabulary_statistics.csv"
         )
 
@@ -391,7 +477,6 @@ class CardsActivity : AppCompatActivity() {
 
         file.writeText(csv.toString())
 
-        Toast.makeText(this, "CSV сохранен!", Toast.LENGTH_LONG).show()
         return file
     }
     private fun exportStatisticsXLS():File{
@@ -421,15 +506,12 @@ class CardsActivity : AppCompatActivity() {
             row.createCell(4).setCellValue(stats.sessionDuration.toDouble())
         }
 
-        val file = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-            "learning_statistics.xlsx"
+        val file = File(filesDir, "vocabulary_statistics.xlsx"
+
         )
 
         FileOutputStream(file).use { workbook.write(it) }
         workbook.close()
-
-        Toast.makeText(this, "XLS сохранен!", Toast.LENGTH_LONG).show()
         return file
 
     }

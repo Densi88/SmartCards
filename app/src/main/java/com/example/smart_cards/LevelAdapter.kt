@@ -30,6 +30,12 @@ class LevelAdapter: RecyclerView.Adapter<LevelAdapter.LevelsHolder>() {
        return levelList.size
     }
 
+    fun updateLevels(newLevels: List<Level>) {
+        levelList.clear()
+        levelList.addAll(newLevels)
+        notifyDataSetChanged()
+    }
+
     class LevelsHolder(item: View): RecyclerView.ViewHolder(item) {
         val binding= LevelItemBinding.bind(item)
         fun bind(level:Level)=with(binding){
