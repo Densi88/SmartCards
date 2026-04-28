@@ -29,6 +29,18 @@
             android:text="Перевод"
             android:textSize="14sp" />
 
+        <Button
+            android:id="@+id/translate_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Перевести" />
+
+        <Button
+            android:id="@+id/dictionary_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Словарик" />
+
 
     </LinearLayout>
 

@@ -74,6 +74,7 @@ dependencies {
     implementation("org.apache.poi:poi:5.5.0")
     implementation("org.apache.poi:poi-ooxml:5.5.0")
     implementation("com.itextpdf:itext7-core:9.4.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
 
 }

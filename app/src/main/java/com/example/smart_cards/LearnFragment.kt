@@ -50,14 +50,6 @@ class LearnFragment: Fragment() {
             LearnFragment()
         }
     }
-    fun updateLevels(levels: List<List<Card>>) {
-        requireActivity().runOnUiThread {
-            val levelObjects = levels.mapIndexed { index, cards ->
-                Level(number = (index + 1).toString())
-            }
-            adapter.updateLevels(levelObjects)
-        }
-    }
     private fun init()  {
         recyclerView.layoutManager= LinearLayoutManager(requireContext())
         recyclerView.adapter=adapter

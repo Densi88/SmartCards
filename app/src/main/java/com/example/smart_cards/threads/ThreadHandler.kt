@@ -9,7 +9,7 @@ import com.example.smart_cards.db.dbAdapter
 
 class ThreadHandler(private val onLevelsUpdate: (List<List<Card>>) -> Unit) {
     private val cardList = mutableListOf<Card>()
-    @Volatile
+
     var running = true
     var firstLoadComplete = false
     private var lastWordCount = 0
@@ -49,6 +49,7 @@ class ThreadHandler(private val onLevelsUpdate: (List<List<Card>>) -> Unit) {
             }
         }
         db.close()
+        println("Доступ к бд закрыт")
     }
     val buildLevelsThread = Thread {
         while (!firstLoadComplete && running) {

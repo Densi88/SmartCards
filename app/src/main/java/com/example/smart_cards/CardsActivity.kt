@@ -29,8 +29,7 @@ import java.sql.SQLException
 import java.util.Date
 import kotlinx.coroutines.*
 import androidx.lifecycle.lifecycleScope
-
-
+import okhttp3.OkHttpClient
 
 
 class CardsActivity : AppCompatActivity() {
@@ -42,6 +41,7 @@ class CardsActivity : AppCompatActivity() {
 
     private var exportJob: Job? = null
     private var readStatistics: List<String>? = null
+    private val client: OkHttpClient= OkHttpClient()
 
     private lateinit var statsButton: Button
     private lateinit var adapter: CardsAdapter
@@ -83,7 +83,6 @@ class CardsActivity : AppCompatActivity() {
     private fun readCoro() {
         lifecycleScope.launch(Dispatchers.Main) {
             while (isActive) {
-                // НЕ ждём экспорт, просто читаем текущий файл
                 val lines = withContext(Dispatchers.IO) {
                     val file = File(filesDir, "vocabulary_statistics.csv")
                     if (!file.exists()) return@withContext null
@@ -100,7 +99,7 @@ class CardsActivity : AppCompatActivity() {
                     println("ЧТЕНИЕ ВЫПОЛНЕНО: ${lines.size} строк")
                 }
 
-                delay(30000)  // читаем каждые 30 секунд
+                delay(30000)
             }
         }
     }
@@ -231,7 +230,9 @@ class CardsActivity : AppCompatActivity() {
             onItemClick = { card ->
                 val position = cardList.indexOf(card)
                 showEditDialog(card, position)
-            }
+            },
+            scope=lifecycleScope,
+            client=client
         )
 
         recyclerView.layoutManager = LinearLayoutManager(this)

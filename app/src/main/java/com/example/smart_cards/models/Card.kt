@@ -1,4 +1,4 @@
 package com.example.smart_cards.models
 
-data class Card(val word: String, val translate: String) {
+data class Card(val word: String, var translate: String) {
 }
