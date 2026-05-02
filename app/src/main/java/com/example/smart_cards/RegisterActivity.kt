@@ -30,14 +30,6 @@ class RegisterActivity: AppCompatActivity() {
         emailInput=findViewById<TextInputEditText>(R.id.email_input_reg)
         usernameInputEditText=findViewById<TextInputEditText>(R.id.name_input_reg)
     }
-    private fun register(hash_password:String, email:String, username:String){
-        val dbHelper= dbAdapter.getDbHelper()
-        val db=dbHelper.writableDatabase
-        val query="insert into user(hash_password, login, username) values (?, ?, ?)"
-        db.execSQL(query, arrayOf(hash_password, email, username))
-        Toast.makeText(this, "Пользователь зарегистрирован", Toast.LENGTH_SHORT).show()
-
-    }
     private fun startLogin(){
         val intent = Intent(this, LoginActivity::class.java)
         startActivity(intent)
@@ -48,16 +40,8 @@ class RegisterActivity: AppCompatActivity() {
             var email=emailInput.text.toString().trim()
             var username=usernameInputEditText.text.toString().trim()
             val hash=simpleHash(password)
-            register(hash, email, username)
             startLogin()
         }
 
-    }
-
-    private fun simpleHash(password: String): String {
-        val bytes = password.toByteArray()
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(bytes)
-        return digest.joinToString("") { "%02x".format(it) }
     }
 }

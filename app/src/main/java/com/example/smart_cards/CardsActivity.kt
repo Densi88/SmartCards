@@ -58,7 +58,6 @@ class CardsActivity : AppCompatActivity() {
         setupSwipeToDelete()
         dbHelper= dbAdapter.getDbHelper()
         val db=dbHelper.readableDatabase
-        readCards(db)
         downloadCoro()
         readCoro()
     }
@@ -126,95 +125,7 @@ class CardsActivity : AppCompatActivity() {
             .setPositiveButton("OK", null)
             .show()
     }
-    private fun addCard(currentWord: String, currentTranslation:String, db: SQLiteDatabase){
-        val addTranslation="insert into translation (translation_text) values (?)"
-        db.execSQL(addTranslation, arrayOf(currentTranslation))
 
-        val cursor = db.rawQuery("SELECT last_insert_rowid()", null)
-        val translationId = if (cursor.moveToFirst()) {
-            cursor.getLong(0)
-        } else {
-            -1L
-        }
-        cursor.close()
-
-        if (translationId == -1L) {
-            throw SQLException("Не удалось получить ID перевода") as Throwable
-        }
-
-
-        val addCard = """
-            INSERT INTO cards (word, translation_id, language_id) 
-            VALUES(?, ?, ?)
-        """.trimIndent()
-        db.execSQL(addCard, arrayOf(currentWord, translationId.toString(), "1"))
-    }
-
-    private fun deleteCard(db: SQLiteDatabase, currentWord: String){
-
-        val rowsDeleted = db.delete("cards", "word = ?", arrayOf(currentWord))
-
-        if (rowsDeleted > 0) {
-            Toast.makeText(this, "Удалено карточек: $rowsDeleted", Toast.LENGTH_SHORT).show()
-            Log.d("DB", "Удалена карточка: $currentWord (каскадно)")
-        } else {
-            Toast.makeText(this, "Карточка '$currentWord' не найдена", Toast.LENGTH_SHORT).show()
-        }
-
-    }
-
-    private fun updateCard(db: SQLiteDatabase, newWord:String, newTranslation: String, oldWord:String){
-        val cursor = db.rawQuery(
-            "SELECT c.id, c.translation_id FROM cards c WHERE c.word = ?",
-            arrayOf(oldWord)
-        )
-        if (!cursor.moveToFirst()) {
-            cursor.close()
-            Toast.makeText(this, "Карточка '$oldWord' не найдена", Toast.LENGTH_SHORT).show()
-            return
-        }
-        val cardId = cursor.getLong(cursor.getColumnIndexOrThrow("id"))
-        val translationId = cursor.getLong(cursor.getColumnIndexOrThrow("translation_id"))
-        cursor.close()
-
-        val translationValues = ContentValues().apply {
-            put("translation_text", newTranslation)
-        }
-
-        db.update(
-            "translation",
-            translationValues,
-            "id = ?",
-            arrayOf(translationId.toString())
-        )
-
-        // 3. Обновляем слово в карточке
-        val cardValues = ContentValues().apply {
-            put("word", newWord)
-        }
-
-        val rowsUpdated = db.update(
-            "cards",
-            cardValues,
-            "id = ?",
-            arrayOf(cardId.toString())
-        )
-    }
-
-    private fun readCards(db: SQLiteDatabase){
-        val query = "SELECT cards.word, translation.translation_text " +
-                "FROM cards JOIN translation ON translation.id = cards.translation_id"
-        val cursor=db.rawQuery(query, null)
-        while (cursor.moveToNext()) {
-            val card = Card(
-                word = cursor.getString(cursor.getColumnIndexOrThrow("word")),
-                translate = cursor.getString(cursor.getColumnIndexOrThrow("translation_text")),
-            )
-            cardList.add(card)
-        }
-        cursor.close()
-
-    }
 
     private fun initViews() {
         recyclerView = findViewById(R.id.recyclerView)
@@ -286,7 +197,6 @@ class CardsActivity : AppCompatActivity() {
                     val deletedCard = cardList[position]
                     val currentWord=deletedCard.word
                     adapter.deleteCard(position)
-                    deleteCard(db, currentWord)
                     showUndoSnackbar(deletedCard, position)
                 }
             }
@@ -317,7 +227,6 @@ class CardsActivity : AppCompatActivity() {
                 val description = descEditText.text.toString()
 
                 if (title.isNotEmpty() && description.isNotEmpty()) {
-                    addCard(title, description, db)
                     val newCard = Card(title, description)
                     adapter.addCard(newCard)
                     dialog.dismiss()
@@ -351,7 +260,6 @@ class CardsActivity : AppCompatActivity() {
                 if (newWord.isNotEmpty() && newTranslate.isNotEmpty()) {
                     val updatedCard = card.copy(word = newWord, translate = newTranslate)
                     adapter.updateCard(position, updatedCard)
-                    updateCard(db, newWord, newTranslate, oldWord)
                 } else {
                     Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
                 }

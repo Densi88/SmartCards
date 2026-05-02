@@ -60,39 +60,6 @@ class LoginActivity: AppCompatActivity() {
             startMainActivity()
         }
     }
-
-    private fun authenticateUser(email: String, hash_password: String): UserModel? {
-        val dbHelper = dbAdapter.getDbHelper()
-        val db = dbHelper.readableDatabase
-
-        // Пример SQL запроса
-        val query = """
-            SELECT login, username 
-            FROM user 
-            WHERE login = ? AND hash_password = ?
-        """.trimIndent()
-
-        val cursor = db.rawQuery(query, arrayOf(email, hash_password))
-
-        return if (cursor.moveToFirst()) {
-            val userEmail = cursor.getString(cursor.getColumnIndexOrThrow("login"))
-            val username = cursor.getString(cursor.getColumnIndexOrThrow("username"))
-
-            cursor.close()
-            UserModel(userEmail, username)
-        } else {
-            cursor.close()
-            null
-        }
-    }
-
-    private fun simpleHash(password: String): String {
-        val bytes = password.toByteArray()
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(bytes)
-        return digest.joinToString("") { "%02x".format(it) }
-    }
-
     private fun startMainActivity(){
         val intent = Intent(this, MainActivity::class.java)
         startActivity(intent)
