@@ -6,6 +6,7 @@ import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.smart_cards.db.dbAdapter
+import com.example.smart_cards.repository.UsersRepository
 import com.google.android.material.textfield.TextInputEditText
 
 import java.security.MessageDigest
@@ -15,6 +16,7 @@ class RegisterActivity: AppCompatActivity() {
     private lateinit var emailInput: TextInputEditText
     private lateinit var passwordInput: TextInputEditText
     private lateinit var usernameInputEditText: TextInputEditText
+    private lateinit var repository: UsersRepository
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +41,7 @@ class RegisterActivity: AppCompatActivity() {
             var password=passwordInput.text.toString().trim()
             var email=emailInput.text.toString().trim()
             var username=usernameInputEditText.text.toString().trim()
-            val hash=simpleHash(password)
+            val hash=repository.simpleHash(password)
             startLogin()
         }
 

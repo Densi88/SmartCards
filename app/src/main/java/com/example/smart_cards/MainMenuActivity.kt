@@ -36,7 +36,7 @@ class MainMenuActivity: AppCompatActivity() {
 
                 R.id.navigation_learn -> {
                     supportFragmentManager.beginTransaction()
-                        .replace(R.id.main_menu_fragment, LearnFragment.instance)
+                        .replace(R.id.main_menu_fragment, LevelFragment())
                         .commit()
                     true
                 }

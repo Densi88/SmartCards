@@ -18,7 +18,7 @@ import java.io.IOException
 import java.net.URLEncoder
 
 class CardsAdapter(
-    private var cards: MutableList<Card>,
+    private var cards: List<Card>,
     private val onItemClick: (Card) -> Unit,
     private val scope: CoroutineScope,
     private val client: OkHttpClient
@@ -35,6 +35,11 @@ class CardsAdapter(
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_card, parent, false)
         return CardViewHolder(view)
+    }
+
+    fun updateList(newCards: List<Card>) {
+        cards = newCards
+        notifyDataSetChanged()
     }
 
     override fun onBindViewHolder(holder: CardViewHolder, position: Int) {
@@ -56,28 +61,6 @@ class CardsAdapter(
     }
 
     override fun getItemCount(): Int = cards.size
-
-    // CRUD методы
-    fun addCard(card: Card) {
-        cards.add(0, card)
-        notifyItemInserted(0)
-    }
-
-    fun updateCard(position: Int, card: Card) {
-        cards[position] = card
-        notifyItemChanged(position)
-    }
-
-    fun deleteCard(position: Int) {
-        cards.removeAt(position)
-        notifyItemRemoved(position)
-    }
-
-    fun restoreCard(card: Card, position: Int) {
-        cards.add(position, card)
-        notifyItemInserted(position)
-    }
-
     private suspend fun makeTranslate(word: String): String {
         return withContext(Dispatchers.IO) {
             // Экранируем слово для URL
@@ -116,10 +99,6 @@ class CardsAdapter(
             }
         }
     }
-
-    /**
-     * Переводит слово и обновляет UI
-     */
     fun translate(word: String, holder: CardViewHolder) {
         scope.launch(Dispatchers.Main) {
             try {

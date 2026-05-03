@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.example.smart_cards.db.dbAdapter
 import com.example.smart_cards.models.UserModel
+import com.example.smart_cards.repository.UsersRepository
 import com.google.android.material.textfield.TextInputEditText
 import java.security.MessageDigest
 
@@ -17,6 +18,9 @@ class LoginActivity: AppCompatActivity() {
 
     private var login: Boolean=false
 
+
+    private lateinit var repository: UsersRepository
+
     private lateinit var emailInput: TextInputEditText
     private lateinit var passwordInput: TextInputEditText
 
@@ -24,6 +28,7 @@ class LoginActivity: AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.login_layout)
         dbAdapter.init(applicationContext)
+        repository = UsersRepository(dbAdapter)
 
         initButtons()
         setListeners()
@@ -51,8 +56,8 @@ class LoginActivity: AppCompatActivity() {
     private fun login(){
         val email = emailInput.text.toString().trim()
         val password = passwordInput.text.toString().trim()
-        val hash=simpleHash(password)
-        val user=authenticateUser(email, hash)
+        val hash=repository.simpleHash(password)
+        val user=repository.authenticateUser(email, hash)
         if(user==null){
             Toast.makeText(this, "Неверный email или пароль", Toast.LENGTH_SHORT).show()
         }

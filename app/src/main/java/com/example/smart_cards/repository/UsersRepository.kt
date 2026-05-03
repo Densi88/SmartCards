@@ -4,7 +4,10 @@ import com.example.smart_cards.db.dbAdapter;
 import com.example.smart_cards.models.UserModel;
 import java.security.MessageDigest
 
-public class UsersRepository {
+public class UsersRepository(
+    private val dbAdapter: dbAdapter
+) {
+    private val dbHelper by lazy { dbAdapter.getDbHelper() }
 
     fun simpleHash(password: String): String {
         val bytes = password.toByteArray()
@@ -13,14 +16,12 @@ public class UsersRepository {
         return digest.joinToString("") { "%02x".format(it) }
     }
     fun register(hash_password:String, email:String, username:String){
-        val dbHelper= dbAdapter.getDbHelper()
         val db=dbHelper.writableDatabase
         val query="insert into user(hash_password, login, username) values (?, ?, ?)"
         db.execSQL(query, arrayOf(hash_password, email, username))
     }
 
     fun authenticateUser(email: String, hash_password: String): UserModel? {
-        val dbHelper = dbAdapter.getDbHelper()
         val db = dbHelper.readableDatabase
 
         // Пример SQL запроса

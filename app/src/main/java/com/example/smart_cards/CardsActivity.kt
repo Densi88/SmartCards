@@ -29,8 +29,9 @@ import java.sql.SQLException
 import java.util.Date
 import kotlinx.coroutines.*
 import androidx.lifecycle.lifecycleScope
+import com.example.smart_cards.repository.CardsRepository
+import com.example.smart_cards.viewModels.CardsViewModel
 import okhttp3.OkHttpClient
-
 
 class CardsActivity : AppCompatActivity() {
 
@@ -38,10 +39,11 @@ class CardsActivity : AppCompatActivity() {
     private lateinit var addButton: Button
     private lateinit var exportButton: Button
     private lateinit var importButton: Button
+    private lateinit var viewModel: CardsViewModel
 
     private var exportJob: Job? = null
     private var readStatistics: List<String>? = null
-    private val client: OkHttpClient= OkHttpClient()
+    private val client: OkHttpClient = OkHttpClient()
 
     private lateinit var statsButton: Button
     private lateinit var adapter: CardsAdapter
@@ -53,13 +55,56 @@ class CardsActivity : AppCompatActivity() {
         setContentView(R.layout.cards_activity_layout)
 
         initViews()
+
+        // Инициализируем БД и ViewModel
+        dbAdapter.init(applicationContext)
+        val repository = CardsRepository(dbAdapter)
+        viewModel = CardsViewModel(repository)
+
         setupRecyclerView()
         setupButton()
         setupSwipeToDelete()
-        dbHelper= dbAdapter.getDbHelper()
-        val db=dbHelper.readableDatabase
+        dbHelper = dbAdapter.getDbHelper()
+
         downloadCoro()
         readCoro()
+
+        // Наблюдаем за списком карточек
+        lifecycleScope.launch {
+            viewModel.cards.collect { cards ->
+                cardList.clear()
+                cardList.addAll(cards)
+                adapter.updateList(cards)
+            }
+        }
+
+        // Наблюдаем за событиями
+        lifecycleScope.launch {
+            viewModel.event.collect { event ->
+                when (event) {
+                    is CardsViewModel.CardEvent.ShowMessage -> {
+                        Toast.makeText(this@CardsActivity, event.message, Toast.LENGTH_SHORT).show()
+                    }
+                    is CardsViewModel.CardEvent.ShowError -> {
+                        Toast.makeText(this@CardsActivity, event.message, Toast.LENGTH_LONG).show()
+                    }
+                    null -> {}
+                }
+                viewModel.consumeEvent()
+            }
+        }
+
+        // Наблюдаем за загрузкой
+        lifecycleScope.launch {
+            viewModel.isLoading.collect { isLoading ->
+                // Можно показать/скрыть прогресс-бар
+                if (isLoading) {
+                    // Показать прогресс
+                } else {
+                    // Скрыть прогресс
+                }
+            }
+        }
     }
 
     private fun downloadCoro() {
@@ -109,7 +154,6 @@ class CardsActivity : AppCompatActivity() {
             appendLine("Всего строк: ${lines.size}")
             appendLine("")
 
-            // Показываем первые 15 строк
             lines.take(15).forEachIndexed { index, line ->
                 appendLine("${index + 1}. $line")
             }
@@ -126,24 +170,22 @@ class CardsActivity : AppCompatActivity() {
             .show()
     }
 
-
     private fun initViews() {
         recyclerView = findViewById(R.id.recyclerView)
         addButton = findViewById(R.id.Button)
-        exportButton=findViewById<Button>(R.id.export_button)
-        importButton=findViewById<Button>(R.id.import_button)
-        statsButton=findViewById<Button>(R.id.show_statistics_button)
+        exportButton = findViewById<Button>(R.id.export_button)
+        importButton = findViewById<Button>(R.id.import_button)
+        statsButton = findViewById<Button>(R.id.show_statistics_button)
     }
 
     private fun setupRecyclerView() {
         adapter = CardsAdapter(
             cards = cardList,
             onItemClick = { card ->
-                val position = cardList.indexOf(card)
-                showEditDialog(card, position)
+                showEditDialog(card)
             },
-            scope=lifecycleScope,
-            client=client
+            scope = lifecycleScope,
+            client = client
         )
 
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -157,11 +199,11 @@ class CardsActivity : AppCompatActivity() {
         }
         exportButton.setOnClickListener {
             exportStatisticsCSV()
-            exportPDF();
+            exportPDF()
             exportStatisticsXLS()
         }
         importButton.setOnClickListener {
-            val text: String=readTextFile()
+            val text: String = readTextFile()
             importPdfVocabulary(text)
         }
         statsButton.setOnClickListener {
@@ -175,10 +217,7 @@ class CardsActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupSwipeToDelete() {
-        dbHelper= dbAdapter.getDbHelper()
-        val db=dbHelper.writableDatabase
         val itemTouchHelperCallback = object : ItemTouchHelper.SimpleCallback(
             0,
             ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
@@ -195,9 +234,8 @@ class CardsActivity : AppCompatActivity() {
                 val position = viewHolder.adapterPosition
                 if (position != RecyclerView.NO_POSITION) {
                     val deletedCard = cardList[position]
-                    val currentWord=deletedCard.word
-                    adapter.deleteCard(position)
-                    showUndoSnackbar(deletedCard, position)
+                    viewModel.deleteCard(deletedCard.word)
+                    showUndoSnackbar(deletedCard)
                 }
             }
         }
@@ -210,8 +248,6 @@ class CardsActivity : AppCompatActivity() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_card, null)
         val titleEditText = dialogView.findViewById<EditText>(R.id.etTitle)
         val descEditText = dialogView.findViewById<EditText>(R.id.etDescription)
-        dbHelper= dbAdapter.getDbHelper()
-        val db=dbHelper.writableDatabase
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Добавить карточку")
@@ -227,8 +263,7 @@ class CardsActivity : AppCompatActivity() {
                 val description = descEditText.text.toString()
 
                 if (title.isNotEmpty() && description.isNotEmpty()) {
-                    val newCard = Card(title, description)
-                    adapter.addCard(newCard)
+                    viewModel.addCard(title, description)
                     dialog.dismiss()
                 } else {
                     Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
@@ -239,27 +274,23 @@ class CardsActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showEditDialog(card: Card, position: Int) {
+    private fun showEditDialog(card: Card) {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_edit_card, null)
         val titleEditText = dialogView.findViewById<EditText>(R.id.etTitle)
         val descEditText = dialogView.findViewById<EditText>(R.id.etDescription)
-        dbHelper= dbAdapter.getDbHelper()
-        val db=dbHelper.writableDatabase
 
         titleEditText.setText(card.word)
-        val oldWord=card.word
         descEditText.setText(card.translate)
 
         val dialog = AlertDialog.Builder(this)
             .setTitle("Редактировать карточку")
             .setView(dialogView)
-            .setPositiveButton("Сохранить") { dialog, _ ->
+            .setPositiveButton("Сохранить") { _, _ ->
                 val newWord = titleEditText.text.toString()
                 val newTranslate = descEditText.text.toString()
 
                 if (newWord.isNotEmpty() && newTranslate.isNotEmpty()) {
-                    val updatedCard = card.copy(word = newWord, translate = newTranslate)
-                    adapter.updateCard(position, updatedCard)
+                    viewModel.updateCard(card.word, newWord, newTranslate)
                 } else {
                     Toast.makeText(this, "Заполните все поля", Toast.LENGTH_SHORT).show()
                 }
@@ -272,10 +303,10 @@ class CardsActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun showUndoSnackbar(deletedCard: Card, position: Int) {
+    private fun showUndoSnackbar(deletedCard: Card) {
         Snackbar.make(recyclerView, "Карточка удалена", Snackbar.LENGTH_LONG)
             .setAction("ОТМЕНА") {
-                adapter.restoreCard(deletedCard, position)
+                viewModel.loadCards()
             }
             .show()
     }
@@ -301,21 +332,18 @@ class CardsActivity : AppCompatActivity() {
         }
     }
 
-
     private fun exportPDF(): File {
         val document = PdfDocument()
-        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create() // A4
+        val pageInfo = PdfDocument.PageInfo.Builder(595, 842, 1).create()
         val page = document.startPage(pageInfo)
 
         val canvas = page.canvas
         val paint = Paint()
 
-        // Заголовок
         paint.textSize = 18f
         paint.isFakeBoldText = true
         canvas.drawText("Мой словарь иностранных слов", 50f, 50f, paint)
 
-        // Слова
         paint.textSize = 12f
         paint.isFakeBoldText = false
         var yPos = 80f
@@ -326,17 +354,13 @@ class CardsActivity : AppCompatActivity() {
 
         document.finishPage(page)
 
-        val file = File(
-            filesDir,
-            "my_vocabulary.pdf"
-        )
+        val file = File(filesDir, "my_vocabulary.pdf")
 
         FileOutputStream(file).use { fos ->
             document.writeTo(fos)
         }
         document.close()
         createTextFileForImport(file)
-
 
         Toast.makeText(this, "PDF создан: ${file.absolutePath}", Toast.LENGTH_LONG).show()
         return file
@@ -366,13 +390,11 @@ class CardsActivity : AppCompatActivity() {
             )
         }
     }
+
     private fun exportStatisticsCSV(): File {
         val wordProgress = generateRealisticData()
 
-        val file = File(
-            filesDir,
-            "vocabulary_statistics.csv"
-        )
+        val file = File(filesDir, "vocabulary_statistics.csv")
 
         val csv = StringBuilder()
 
@@ -388,7 +410,8 @@ class CardsActivity : AppCompatActivity() {
 
         return file
     }
-    private fun exportStatisticsXLS():File{
+
+    private fun exportStatisticsXLS(): File {
         val learningStats = generateLearningStats()
 
         val workbook = XSSFWorkbook()
@@ -397,7 +420,6 @@ class CardsActivity : AppCompatActivity() {
 
         var row = statsSheet.createRow(rowNum++)
 
-        // Заголовки
         row = statsSheet.createRow(rowNum++)
         row.createCell(0).setCellValue("Дата")
         row.createCell(1).setCellValue("Изучено слов")
@@ -405,7 +427,6 @@ class CardsActivity : AppCompatActivity() {
         row.createCell(3).setCellValue("Всего попыток")
         row.createCell(4).setCellValue("Длительность (мин)")
 
-        // Данные
         learningStats.forEach { stats ->
             row = statsSheet.createRow(rowNum++)
             row.createCell(0).setCellValue(stats.date.toString())
@@ -415,14 +436,11 @@ class CardsActivity : AppCompatActivity() {
             row.createCell(4).setCellValue(stats.sessionDuration.toDouble())
         }
 
-        val file = File(filesDir, "vocabulary_statistics.xlsx"
-
-        )
+        val file = File(filesDir, "vocabulary_statistics.xlsx")
 
         FileOutputStream(file).use { workbook.write(it) }
         workbook.close()
         return file
-
     }
 
     private fun importPdfVocabulary(text: String) {
@@ -430,13 +448,11 @@ class CardsActivity : AppCompatActivity() {
         var startParsing = false
         Log.d("DEBUG_IMPORT", "=== НАЧАЛО ИМПОРТА ===")
         Log.d("DEBUG_IMPORT", "Размер cardList ДО очистки: ${cardList.size}")
-        cardList.clear()
-        adapter.notifyDataSetChanged()
 
-        Log.d("DEBUG_IMPORT", "Размер cardList ПОСЛЕ очистки: ${cardList.size}")
-
-
-
+        // Очищаем через ViewModel
+        cardList.forEach { card ->
+            viewModel.deleteCard(card.word)
+        }
         for (line in lines) {
             when {
                 line.contains("Мой словарь иностранных слов") -> {
@@ -449,16 +465,13 @@ class CardsActivity : AppCompatActivity() {
                         val word = parts[0].trim()
                         val translate = parts[1].trim()
                         Log.d("DEBUG_IMPORT", "Найдена пара: '$word' - '$translate'")
-                        val card: Card= Card(word, translate)
-                        Log.d("DEBUG_IMPORT", "Добавляем карточку в список")
-                        cardList.add(card)
+                        viewModel.addCard(word, translate)
                     }
                 }
             }
         }
-        adapter.notifyDataSetChanged()
-
     }
+
     private fun readTextFile(): String {
         return try {
             val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
@@ -476,5 +489,10 @@ class CardsActivity : AppCompatActivity() {
             Log.e("READ_FILE", "Ошибка чтения файла", e)
             ""
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        exportJob?.cancel()
     }
 }
