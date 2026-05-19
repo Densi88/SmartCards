@@ -1,7 +1,8 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import com.example.smart_cards.R
 
 class SettingsActivity: ComponentActivity() {
 

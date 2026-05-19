@@ -110,12 +110,6 @@ class CardsViewModel(
             }
         }
     }
-
-    // Получить карточку по слову
-    fun getCardByWord(word: String): Card? {
-        return _cards.value.find { it.word == word }
-    }
-
     // Сбросить событие
     fun consumeEvent() {
         _event.value = null

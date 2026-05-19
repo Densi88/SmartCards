@@ -1,19 +1,24 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
+import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
+import com.example.smart_cards.R
 import com.example.smart_cards.models.Card
 import kotlinx.coroutines.*
 import org.json.JSONObject
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
 import java.net.URLEncoder
 
@@ -53,7 +58,7 @@ class CardsAdapter(
         }
 
         holder.translateButton.setOnClickListener {
-            translate(card.word, holder) // Передаем holder для обновления UI
+            translate(card.word, holder)
         }
         holder.dictionaryButton.setOnClickListener {
             getDictionary(card.word, holder)
@@ -63,7 +68,6 @@ class CardsAdapter(
     override fun getItemCount(): Int = cards.size
     private suspend fun makeTranslate(word: String): String {
         return withContext(Dispatchers.IO) {
-            // Экранируем слово для URL
             val encodedWord = URLEncoder.encode(word, "UTF-8")
             val url = "https://api.mymemory.translated.net/get?q=$encodedWord&langpair=en|ru"
 
@@ -81,21 +85,9 @@ class CardsAdapter(
                 val responseBody = response.body?.string()
                 val jsonResponse = JSONObject(responseBody)
 
-                // Парсим ответ MyMemory
-                // Структура ответа: { "responseData": { "translatedText": "..." } }
                 val responseData = jsonResponse.optJSONObject("responseData")
                 var translatedText = responseData?.optString("translatedText") ?: ""
-
-                // MyMemory может возвращать HTML сущности, декодируем их
-                translatedText = translatedText
-                    .replace("&#39;", "'")
-                    .replace("&quot;", "\"")
-                    .replace("&amp;", "&")
-                    .replace("&lt;", "<")
-                    .replace("&gt;", ">")
-
-                translatedText.takeIf { it.isNotEmpty() && it != word }
-                    ?: "Перевод не найден"
+                responseData?.optString("translatedText") ?: "Перевод не найден"
             }
         }
     }
@@ -116,7 +108,6 @@ class CardsAdapter(
                     Toast.LENGTH_SHORT
                 ).show()
             } catch (e: Exception) {
-                holder.translate.text = "Ошибка"
                 Toast.makeText(
                     holder.itemView.context,
                     "Ошибка: ${e.message}",
@@ -141,7 +132,7 @@ class CardsAdapter(
             val request = Request.Builder()
                 .url(url)
                 .get()
-                .addHeader("User-Agent", "SmartCards/1.0 (Android; smartcards@example.com)")  // ✅ Добавили
+                .addHeader("User-Agent", "SmartCards/1.0 (Android; smartcards@example.com)")
                 .build()
 
 
@@ -156,11 +147,9 @@ class CardsAdapter(
                 val query = jsonResponse.getJSONObject("query")
                 val pages = query.getJSONObject("pages")
 
-                // Получаем первый (и единственный) page
                 val pageId = pages.keys().next()
                 val page = pages.getJSONObject(pageId)
 
-                // Проверяем, существует ли страница
                 if (page.has("missing")) {
                     return@withContext "Определение для слова '${word}' не найдено"
                 }
@@ -196,25 +185,25 @@ class CardsAdapter(
         }
     }
 
-    private fun showDefinitionDialog(context: android.content.Context, word: String, definition: String) {
-        val scrollView = android.widget.ScrollView(context)
-        val textView = android.widget.TextView(context).apply {
+    private fun showDefinitionDialog(context: Context, word: String, definition: String) {
+        val scrollView = ScrollView(context)
+        val textView = TextView(context).apply {
             setText(definition)
             setPadding(48, 32, 48, 32)
             textSize = 14f
-            setTextColor(android.graphics.Color.BLACK)
+            setTextColor(Color.BLACK)
         }
         scrollView.addView(textView)
 
-        val dialog = android.app.AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context)
             .setTitle("Определение: $word")
             .setView(scrollView)
             .setPositiveButton("Закрыть") { dialog, _ ->
                 dialog.dismiss()
             }
             .setNegativeButton("Копировать") { dialog, _ ->
-                val clipboard = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                val clip = android.content.ClipData.newPlainText("definition", definition)
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("definition", definition)
                 clipboard.setPrimaryClip(clip)
                 Toast.makeText(context, "Определение скопировано", Toast.LENGTH_SHORT).show()
                 dialog.dismiss()

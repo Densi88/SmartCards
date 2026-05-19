@@ -1,14 +1,10 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.content.Intent
-import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
-import android.util.Log
 import android.widget.Button
 import androidx.activity.ComponentActivity
-import com.example.smart_cards.db.dbAdapter
-import com.example.smart_cards.db.dbOpenHelper
-import com.example.smart_cards.threads.ThreadHandler
+import com.example.smart_cards.R
 
 
 class MainActivity : ComponentActivity() {

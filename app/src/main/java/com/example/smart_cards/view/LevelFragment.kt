@@ -1,5 +1,6 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
+import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -10,8 +11,9 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
+import com.example.smart_cards.R
 import com.example.smart_cards.db.dbAdapter
-import com.example.smart_cards.repository.CardsRepository
+import com.example.smart_cards.viewModels.LevelViewModelFactory
 import com.example.smart_cards.repository.LevelRepository
 import com.example.smart_cards.viewModels.LevelViewModel
 import kotlinx.coroutines.launch
@@ -28,12 +30,7 @@ class LevelFragment : Fragment() {
     private lateinit var btnBack: Button
 
     private val viewModel: LevelViewModel by viewModels {
-        object : androidx.lifecycle.ViewModelProvider.Factory {
-            override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-                val repository = LevelRepository(dbAdapter)
-                return LevelViewModel(repository) as T
-            }
-        }
+        LevelViewModelFactory(LevelRepository(dbAdapter))
     }
 
     override fun onCreateView(
@@ -170,14 +167,14 @@ class LevelFragment : Fragment() {
                 // Показываем визуальную обратную связь
                 val isCorrect = option == state.question.correctAnswer
                 if (isCorrect) {
-                    button.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
+                    button.setBackgroundColor(Color.parseColor("#4CAF50"))
                 } else {
-                    button.setBackgroundColor(android.graphics.Color.parseColor("#F44336"))
+                    button.setBackgroundColor(Color.parseColor("#F44336"))
                     // Находим и подсвечиваем правильный ответ
                     for (i in 0 until buttonsContainer.childCount) {
                         val child = buttonsContainer.getChildAt(i) as? Button
                         if (child?.text == state.question.correctAnswer) {
-                            child.setBackgroundColor(android.graphics.Color.parseColor("#4CAF50"))
+                            child.setBackgroundColor(Color.parseColor("#4CAF50"))
                         }
                     }
                 }
@@ -200,7 +197,7 @@ class LevelFragment : Fragment() {
     private fun resetButtonColors() {
         for (i in 0 until buttonsContainer.childCount) {
             val button = buttonsContainer.getChildAt(i) as? Button
-            button?.setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            button?.setBackgroundColor(Color.TRANSPARENT)
         }
     }
 
@@ -218,11 +215,11 @@ class LevelFragment : Fragment() {
             appendLine("Результат: ${state.score} из ${state.total}")
             appendLine()
             if (state.score >= state.total / 2) {
-                appendLine("🎉 Поздравляю! 🎉")
+                appendLine("Поздравляю!")
                 appendLine()
                 appendLine("Вы можете перейти на следующий уровень")
             } else {
-                appendLine("😔 Попробуй еще раз! 😔")
+                appendLine("Попробуй еще раз!")
                 appendLine()
                 appendLine("Нужно ответить правильно хотя бы на половину вопросов")
             }

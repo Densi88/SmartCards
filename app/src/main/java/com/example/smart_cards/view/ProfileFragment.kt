@@ -1,4 +1,4 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import android.widget.TextView
+import com.example.smart_cards.R
 import com.example.smart_cards.models.UserModel
 
 class ProfileFragment: Fragment() {

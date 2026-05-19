@@ -1,26 +1,28 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.smart_cards.R
 import com.example.smart_cards.db.dbAdapter
 import com.example.smart_cards.repository.UsersRepository
+import com.example.smart_cards.viewModels.UserViewModel
 import com.google.android.material.textfield.TextInputEditText
-
-import java.security.MessageDigest
 
 class RegisterActivity: AppCompatActivity() {
     private lateinit var registerButton: Button
     private lateinit var emailInput: TextInputEditText
     private lateinit var passwordInput: TextInputEditText
     private lateinit var usernameInputEditText: TextInputEditText
-    private lateinit var repository: UsersRepository
+    private lateinit var viewModel: UserViewModel
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        dbAdapter.init(applicationContext)
+        val repository = UsersRepository(dbAdapter)
+        viewModel = UserViewModel(repository)
         setContentView(R.layout.registration_layout)
         initView()
         setListeners()
@@ -41,7 +43,7 @@ class RegisterActivity: AppCompatActivity() {
             var password=passwordInput.text.toString().trim()
             var email=emailInput.text.toString().trim()
             var username=usernameInputEditText.text.toString().trim()
-            val hash=repository.simpleHash(password)
+            viewModel.register(email, username, password)
             startLogin()
         }
 

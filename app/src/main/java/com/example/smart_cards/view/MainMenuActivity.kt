@@ -1,11 +1,9 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.os.Bundle
-import android.os.PersistableBundle
-import android.view.MenuItem
-import androidx.activity.ComponentActivity
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import com.example.smart_cards.R
 import com.example.smart_cards.models.UserModel
 import com.google.android.material.bottomnavigation.BottomNavigationView
 

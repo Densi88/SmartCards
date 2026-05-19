@@ -1,4 +1,4 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import NewsAdapter
 import android.os.Bundle
@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.smart_cards.R
 
 class HomeFragment: Fragment() {
     override fun onCreateView(

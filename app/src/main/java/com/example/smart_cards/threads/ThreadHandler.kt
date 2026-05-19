@@ -1,9 +1,6 @@
 package com.example.smart_cards.threads
 
 import com.example.smart_cards.models.Card
-import android.database.sqlite.SQLiteDatabase
-import com.example.smart_cards.LearnFragment
-import com.example.smart_cards.MainActivity
 import com.example.smart_cards.db.dbAdapter
 
 

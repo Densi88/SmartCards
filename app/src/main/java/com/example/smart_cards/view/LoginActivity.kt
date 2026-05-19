@@ -1,20 +1,21 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.smart_cards.R
 import com.example.smart_cards.db.dbAdapter
-import com.example.smart_cards.models.UserModel
 import com.example.smart_cards.repository.UsersRepository
+import com.example.smart_cards.viewModels.UserViewModel
 import com.google.android.material.textfield.TextInputEditText
-import java.security.MessageDigest
+
 
 
 class LoginActivity: AppCompatActivity() {
     private lateinit var loginButton: Button
     private lateinit var registerButton: Button
+    private lateinit var viewModel: UserViewModel
 
     private var login: Boolean=false
 
@@ -29,7 +30,7 @@ class LoginActivity: AppCompatActivity() {
         setContentView(R.layout.login_layout)
         dbAdapter.init(applicationContext)
         repository = UsersRepository(dbAdapter)
-
+        viewModel= UserViewModel(repository)
         initButtons()
         setListeners()
 
@@ -44,25 +45,15 @@ class LoginActivity: AppCompatActivity() {
 
     private fun setListeners(){
         loginButton.setOnClickListener {
-            login()
-
+            val email = emailInput.text.toString().trim()
+            val password = passwordInput.text.toString().trim()
+            viewModel.login(email, password)
+            startMainActivity()
         }
         registerButton.setOnClickListener {
             val intent = Intent(this, RegisterActivity::class.java)
             startActivity(intent)
 
-        }
-    }
-    private fun login(){
-        val email = emailInput.text.toString().trim()
-        val password = passwordInput.text.toString().trim()
-        val hash=repository.simpleHash(password)
-        val user=repository.authenticateUser(email, hash)
-        if(user==null){
-            Toast.makeText(this, "Неверный email или пароль", Toast.LENGTH_SHORT).show()
-        }
-        else{
-            startMainActivity()
         }
     }
     private fun startMainActivity(){

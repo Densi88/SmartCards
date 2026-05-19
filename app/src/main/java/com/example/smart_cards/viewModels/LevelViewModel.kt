@@ -1,21 +1,22 @@
 package com.example.smart_cards.viewModels
 
 import androidx.lifecycle.ViewModel
-import com.example.smart_cards.repository.LevelRepository
 import androidx.lifecycle.viewModelScope
-import com.example.smart_cards.models.Card
 import com.example.smart_cards.models.GameQuestion
 import com.example.smart_cards.models.GameSession
-import com.example.smart_cards.repository.CardsRepository
+import com.example.smart_cards.usecases.*
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import kotlin.random.Random
-
+import kotlinx.coroutines.withContext
 
 class LevelViewModel(
-    private val repository: LevelRepository,
-): ViewModel() {
+    private val getLevelsUseCase: GetLevelsUseCase,
+    private val startLevelUseCase: StartLevelUseCase,
+    private val checkAnswerUseCase: CheckAnswerUseCase,
+    private val nextQuestionUseCase: NextQuestionUseCase
+) : ViewModel() {
 
     sealed class GameUiState {
         object Loading : GameUiState()
@@ -23,7 +24,7 @@ class LevelViewModel(
         data class Question(
             val question: GameQuestion,
             val progress: Int,  // текущий вопрос / всего
-            val score: Int,      // правильные ответы
+            val score: Int,     // правильные ответы
             val level: Int
         ) : GameUiState()
         data class GameComplete(
@@ -42,25 +43,21 @@ class LevelViewModel(
 
     init {
         loadLevels()
-
     }
 
     private fun loadLevels() {
         viewModelScope.launch {
             try {
-                // Запускаем в отдельном потоке
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val levels = repository.getAvailableLevels()
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        if (levels.isEmpty()) {
-                            _uiState.value = GameUiState.Error("Нет доступных уровней")
-                        } else {
-                            _uiState.value = GameUiState.LevelSelection(levels)
-                        }
-                    }
+                val levels = withContext(Dispatchers.IO) {
+                    getLevelsUseCase()
+                }
+                if (levels.isEmpty()) {
+                    _uiState.value = GameUiState.Error("Нет доступных уровней")
+                } else {
+                    _uiState.value = GameUiState.LevelSelection(levels)
                 }
             } catch (e: Exception) {
-                _uiState.value = GameUiState.Error(e.message ?: "Ошибка загрузки")
+                _uiState.value = GameUiState.Error(e.message ?: "Ошибка загрузки уровней")
             }
         }
     }
@@ -69,91 +66,33 @@ class LevelViewModel(
         viewModelScope.launch {
             _uiState.value = GameUiState.Loading
 
-            try {
-                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                    val cards = repository.getCardsForLevel(levelNumber)
+            val result = withContext(Dispatchers.IO) {
+                startLevelUseCase(levelNumber)
+            }
 
-                    if (cards.isEmpty()) {
-                        throw Exception("На этом уровне нет карточек")
-                    }
-
-                    // Создаем игровую сессию
-                    val session = GameSession(
-                        levelNumber = levelNumber,
-                        cards = cards,
-                        totalQuestions = cards.size
-                    )
-
-                    // Создаем вопросы с вариантами ответов
-                    val questions = generateQuestions(cards)
-
-                    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
-                        currentGameSession = session
-                        currentQuestions = questions
-
-                        showNextQuestion()
-                    }
+            when (result) {
+                is StartLevelUseCase.StartLevelResult.Success -> {
+                    currentGameSession = result.session
+                    currentQuestions = result.questions
+                    showNextQuestion()
                 }
-            } catch (e: Exception) {
-                _uiState.value = GameUiState.Error(e.message ?: "Ошибка старта уровня")
+                is StartLevelUseCase.StartLevelResult.Error -> {
+                    _uiState.value = GameUiState.Error(result.message)
+                }
             }
         }
     }
 
-    private fun generateQuestions(cards: List<Card>): List<GameQuestion> {
-        val questions = mutableListOf<GameQuestion>()
-
-        cards.forEach { card ->
-            // Варианты ответов: правильный + 3 случайных неправильных
-            val otherTranslations = cards
-                .filter { it.word != card.word }
-                .map { it.translate }
-                .distinct()
-                .shuffled()
-                .take(3)
-
-            val options = (otherTranslations + card.translate).shuffled()
-
-            questions.add(
-                GameQuestion(
-                    card = card,
-                    options = options,
-                    correctAnswer = card.translate
-                )
-            )
-        }
-
-        return questions.shuffled() // Перемешиваем вопросы
-    }
-
     private fun showNextQuestion() {
         val session = currentGameSession ?: return
-
-        if (session.currentCardIndex >= currentQuestions.size) {
-            // Игра закончена
-            _uiState.value = GameUiState.GameComplete(
-                score = session.correctAnswers,
-                total = session.totalQuestions,
-                level = session.levelNumber
-            )
-            return
-        }
-
-        val currentQuestion = currentQuestions[session.currentCardIndex]
-
-        _uiState.value = GameUiState.Question(
-            question = currentQuestion,
-            progress = session.currentCardIndex + 1,
-            score = session.correctAnswers,
-            level = session.levelNumber
-        )
+        _uiState.value = nextQuestionUseCase(session, currentQuestions)
     }
 
     fun answerQuestion(selectedAnswer: String) {
         val session = currentGameSession ?: return
         val currentQuestion = currentQuestions.getOrNull(session.currentCardIndex) ?: return
 
-        val isCorrect = selectedAnswer == currentQuestion.correctAnswer
+        val isCorrect = checkAnswerUseCase(selectedAnswer, currentQuestion.correctAnswer)
 
         val newSession = session.copy(
             currentCardIndex = session.currentCardIndex + 1,
@@ -161,7 +100,6 @@ class LevelViewModel(
         )
 
         currentGameSession = newSession
-
         showNextQuestion()
     }
 
@@ -170,5 +108,4 @@ class LevelViewModel(
         currentQuestions = emptyList()
         loadLevels()
     }
-
 }

@@ -1,9 +1,7 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import LearningStats
 import WordProgress
-import android.content.ContentValues
-import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.widget.Button
@@ -25,10 +23,10 @@ import com.example.smart_cards.db.dbOpenHelper
 import org.apache.poi.xssf.usermodel.XSSFWorkbook
 import java.io.File
 import java.io.FileOutputStream
-import java.sql.SQLException
 import java.util.Date
 import kotlinx.coroutines.*
 import androidx.lifecycle.lifecycleScope
+import com.example.smart_cards.R
 import com.example.smart_cards.repository.CardsRepository
 import com.example.smart_cards.viewModels.CardsViewModel
 import okhttp3.OkHttpClient

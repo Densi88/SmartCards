@@ -1,17 +1,14 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
-import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.LayoutInflater
-import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.view.menu.MenuAdapter
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.smart_cards.R
 import com.example.smart_cards.databinding.LearnFragmentLayoutBinding
-import com.example.smart_cards.models.Card
 import com.example.smart_cards.models.Level
 import com.example.smart_cards.threads.ThreadHandler
 

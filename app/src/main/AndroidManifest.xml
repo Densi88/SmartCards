@@ -16,7 +16,7 @@
 
         <!-- Все активности будут наследовать тему от application -->
         <activity
-            android:name=".LoginActivity"
+            android:name=".view.LoginActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -25,23 +25,23 @@
         </activity>
 
         <activity
-            android:name=".SettingsActivity"
+            android:name=".view.SettingsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".MainMenuActivity"
+            android:name=".view.MainMenuActivity"
             android:exported="false" />
 
         <activity
-            android:name=".CardsActivity"
+            android:name=".view.CardsActivity"
             android:exported="false" />
 
         <activity
-            android:name=".MainActivity"
+            android:name=".view.MainActivity"
             android:exported="false" />
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".view.RegisterActivity"
             android:exported="false" />
 
     </application>

@@ -1,10 +1,10 @@
-package com.example.smart_cards
+package com.example.smart_cards.view
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.compose.ui.layout.Layout
 import androidx.recyclerview.widget.RecyclerView
+import com.example.smart_cards.R
 import com.example.smart_cards.databinding.LevelItemBinding
 import com.example.smart_cards.db.dbAdapter
 import com.example.smart_cards.models.Level
